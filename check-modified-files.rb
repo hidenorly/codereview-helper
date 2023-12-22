@@ -15,15 +15,39 @@
 # limitations under the License.
 
 require_relative 'GitUtil'
+require_relative 'ExecUtil'
+require "shellwords"
+
+class ICodeReview
+	def execute(path)
+	end
+end
+
+class CppCheck < ICodeReview
+	def initialize(options=nil)
+		@options = options ? options.join(" ") : nil
+	end
+	def execute(path)
+		if FileClassifier.getFileType(path) == FileClassifier::FORMAT_C then
+			exec_cmd = "cppcheck #{Shellwords.shellescape(path)} #{@options}"
+			return ExecUtil.getExecResultEachLine(exec_cmd, ".")
+		end
+		return []
+	end
+end
 
 all_modified, result_to_be_commited, result_changes_not_staged, result_untracked = GitUtil.status(".")
-puts "All modified = #{all_modified.join("\n\t")}"
-puts "To_be_commited = #{result_to_be_commited.join("\n\t")}"
-puts "Changes not staged = #{result_changes_not_staged.join("\n\t")}"
-puts "Untracked = #{result_untracked.join("\n\t")}"
+
+checker = []
+checker << CppCheck.new()
+
 
 all_modified.each do |aFile|
 	result = GitUtil.diff(".", "HEAD #{aFile}")
-	puts result.join("")
-	puts ""
+	if !result.empty? or result_to_be_commited.include?(aFile) then
+		# actual modified file!
+		checker.each do |aChecker|
+			puts _checker = aChecker.execute( aFile )
+		end
+	end
 end
