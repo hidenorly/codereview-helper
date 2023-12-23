@@ -17,6 +17,7 @@
 require_relative 'GitUtil'
 require_relative 'ExecUtil'
 require "shellwords"
+require 'optparse'
 
 class ICodeReview
 	def execute(path)
@@ -25,7 +26,7 @@ end
 
 class CppCheck < ICodeReview
 	def initialize(options=nil)
-		@options = options ? options.join(" ") : nil
+		@options = options.to_s
 	end
 	def execute(path)
 		if FileClassifier.getFileType(path) == FileClassifier::FORMAT_C then
@@ -36,10 +37,24 @@ class CppCheck < ICodeReview
 	end
 end
 
+#---- main --------------------------
+options = {
+	:cppcheck => nil,
+}
+
+opt_parser = OptionParser.new do |opts|
+	opts.banner = "Usage: execute this in the git folder's root"
+
+	opts.on("-c", "--cppcheck=", "Specify option for cppcheck (default:#{options[:cppcheck]}) e.g. --enable=all") do |cppcheck|
+		options[:cppcheck] = cppcheck
+	end
+end.parse!
+
+
 all_modified, result_to_be_commited, result_changes_not_staged, result_untracked = GitUtil.status(".")
 
 checker = []
-checker << CppCheck.new()
+checker << CppCheck.new(options[:cppcheck])
 
 
 all_modified.each do |aFile|
