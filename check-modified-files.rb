@@ -39,11 +39,16 @@ end
 
 #---- main --------------------------
 options = {
+	:all => false,
 	:cppcheck => nil,
 }
 
 opt_parser = OptionParser.new do |opts|
 	opts.banner = "Usage: execute this in the git folder's root"
+
+	opts.on("-a", "--all", "Specify if you want to apply all modified files") do
+		options[:all] = true
+	end
 
 	opts.on("-c", "--cppcheck=", "Specify option for cppcheck (default:#{options[:cppcheck]}) e.g. --enable=all") do |cppcheck|
 		options[:cppcheck] = cppcheck
@@ -59,7 +64,7 @@ checker << CppCheck.new(options[:cppcheck])
 
 all_modified.each do |aFile|
 	result = GitUtil.diff(".", "HEAD #{aFile}")
-	if !result.empty? or result_to_be_commited.include?(aFile) then
+	if options[:all] or !result.empty? or result_to_be_commited.include?(aFile) then
 		# actual modified file!
 		checker.each do |aChecker|
 			puts _checker = aChecker.execute( aFile )
