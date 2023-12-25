@@ -37,6 +37,21 @@ class CppCheck < ICodeReview
 	end
 end
 
+class Infer < ICodeReview
+	def initialize(options=nil)
+		@options = options.to_s
+	end
+	def execute(path)
+		case FileClassifier.getFileType(path)
+		when FileClassifier::FORMAT_C then
+			exec_cmd = "infer run -- clang -c #{Shellwords.shellescape(path)} #{@options}"
+			return ExecUtil.getExecResultEachLine(exec_cmd, ".")
+		when FileClassifier::FORMAT_JAVA then
+		end
+		return []
+	end
+end
+
 #---- main --------------------------
 options = {
 	:all => false,
@@ -60,6 +75,7 @@ all_modified, result_to_be_commited, result_changes_not_staged, result_untracked
 
 checker = []
 checker << CppCheck.new(options[:cppcheck])
+checker << Infer.new()
 
 
 all_modified.each do |aFile|
