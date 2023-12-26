@@ -44,9 +44,13 @@ class Infer < ICodeReview
 	def execute(path)
 		case FileClassifier.getFileType(path)
 		when FileClassifier::FORMAT_C then
-			exec_cmd = "infer run -- clang -c #{Shellwords.shellescape(path)} #{@options}"
+			exec_cmd = "infer capture -- clang -c #{Shellwords.shellescape(path)} #{@options}"
+			ExecUtil.getExecResultEachLine(exec_cmd, ".")
+			exec_cmd = "infer analyze -- clang -c #{Shellwords.shellescape(path)} #{@options}"
 			return ExecUtil.getExecResultEachLine(exec_cmd, ".")
 		when FileClassifier::FORMAT_JAVA then
+			#exec_cmd = "infer run -- javac #{Shellwords.shellescape(path)} #{@options}"
+			#return ExecUtil.getExecResultEachLine(exec_cmd, ".")
 		end
 		return []
 	end
