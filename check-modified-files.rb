@@ -20,6 +20,14 @@ require "shellwords"
 require 'optparse'
 
 class ICodeReview
+	def self._isAvailable(command)
+		exec_cmd = "which #{Shellwords.shellescape(command)}"
+		result = ExecUtil.getExecResultEachLine(exec_cmd, ".")
+		return !result.include?("not found")
+	end
+	def self.isAvailable()
+		return false
+	end
 	def execute(path)
 	end
 end
@@ -28,6 +36,11 @@ class CppCheck < ICodeReview
 	def initialize(options=nil)
 		@options = options.to_s
 	end
+
+	def self.isAvailable()
+		return _isAvailable("cppcheck")
+	end
+
 	def execute(path)
 		if FileClassifier.getFileType(path) == FileClassifier::FORMAT_C then
 			exec_cmd = "cppcheck #{Shellwords.shellescape(path)} #{@options}"
@@ -41,6 +54,11 @@ class Infer < ICodeReview
 	def initialize(options=nil)
 		@options = options.to_s
 	end
+
+	def self.isAvailable()
+		return _isAvailable("infer")
+	end
+
 	def execute(path)
 		case FileClassifier.getFileType(path)
 		when FileClassifier::FORMAT_C then
@@ -78,8 +96,8 @@ end.parse!
 all_modified, result_to_be_commited, result_changes_not_staged, result_untracked = GitUtil.status(".")
 
 checker = []
-checker << CppCheck.new(options[:cppcheck])
-checker << Infer.new()
+checker << CppCheck.new(options[:cppcheck]) if CppCheck.isAvailable()
+checker << Infer.new() if Infer.isAvailable()
 
 
 all_modified.each do |aFile|
