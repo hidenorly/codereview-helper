@@ -51,8 +51,9 @@ class CppCheck < ICodeReview
 end
 
 class Infer < ICodeReview
-	def initialize(options=nil)
-		@options = options.to_s
+	def initialize(optionsCapture=nil, optionsAnalyze=nil)
+		@optionsCapture = optionsCapture.to_s
+		@optionsAnalyze = optionsAnalyze.to_s
 	end
 
 	def self.isAvailable()
@@ -62,9 +63,9 @@ class Infer < ICodeReview
 	def execute(path)
 		case FileClassifier.getFileType(path)
 		when FileClassifier::FORMAT_C then
-			exec_cmd = "infer capture -- clang -c #{Shellwords.shellescape(path)} #{@options}"
+			exec_cmd = "infer capture -- clang #{@optionsCapture} -c #{Shellwords.shellescape(path)}"
 			ExecUtil.getExecResultEachLine(exec_cmd, ".")
-			exec_cmd = "infer analyze -- clang -c #{Shellwords.shellescape(path)} #{@options}"
+			exec_cmd = "infer analyze -- clang #{@optionsAnalyze} -c #{Shellwords.shellescape(path)}"
 			return ExecUtil.getExecResultEachLine(exec_cmd, ".")
 		when FileClassifier::FORMAT_JAVA then
 			#exec_cmd = "infer run -- javac #{Shellwords.shellescape(path)} #{@options}"
@@ -78,6 +79,8 @@ end
 options = {
 	:all => false,
 	:cppcheck => nil,
+	:inferCapture => nil,
+	:inferAnalyze => nil
 }
 
 opt_parser = OptionParser.new do |opts|
@@ -90,6 +93,14 @@ opt_parser = OptionParser.new do |opts|
 	opts.on("-c", "--cppcheck=", "Specify option for cppcheck (default:#{options[:cppcheck]}) e.g. --enable=all") do |cppcheck|
 		options[:cppcheck] = cppcheck
 	end
+
+	opts.on("", "--inferCapture=", "Specify option for infer on the capture command (default:#{options[:inferCapture]})") do |inferCapture|
+		options[:inferCapture] = inferCapture
+	end
+
+	opts.on("", "--inferAnalyze=", "Specify option for infer on the analyze command (default:#{options[:inferAnalyze]})") do |inferAnalyze|
+		options[:inferAnalyze] = inferAnalyze
+	end
 end.parse!
 
 
@@ -97,7 +108,7 @@ all_modified, result_to_be_commited, result_changes_not_staged, result_untracked
 
 checker = []
 checker << CppCheck.new(options[:cppcheck]) if CppCheck.isAvailable()
-checker << Infer.new() if Infer.isAvailable()
+checker << Infer.new(options[:inferCapture], options[:inferAnalyze]) if Infer.isAvailable()
 
 
 all_modified.each do |aFile|
