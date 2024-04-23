@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-# Copyright 2023 hidenorly
+# Copyright 2023, 2024 hidenorly
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ class ICodeReview
 		return false
 	end
 	def execute(path)
+		return []
 	end
 end
 
@@ -75,6 +76,22 @@ class Infer < ICodeReview
 	end
 end
 
+class LlmReview < ICodeReview
+	FILE_LLM_REVIEW = "llm-review.py"
+	def initialize(options=nil)
+		@options = options.to_s
+	end
+
+	def self.isAvailable()
+		return File.exist?(FILE_LLM_REVIEW)
+	end
+
+	def execute(path)
+		exec_cmd = "python3 #{FILE_LLM_REVIEW} #{Shellwords.shellescape(path)} #{@options}"
+		return ExecUtil.getExecResultEachLine(exec_cmd, ".")
+	end
+end
+
 #---- main --------------------------
 options = {
 	:all => false,
@@ -109,6 +126,7 @@ all_modified, result_to_be_commited, result_changes_not_staged, result_untracked
 checker = []
 checker << CppCheck.new(options[:cppcheck]) if CppCheck.isAvailable()
 checker << Infer.new(options[:inferCapture], options[:inferAnalyze]) if Infer.isAvailable()
+checker << LlmReview.new() if LlmReview.isAvailable()
 
 
 all_modified.each do |aFile|
