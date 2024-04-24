@@ -14,7 +14,19 @@
 
 import argparse
 import os
+import sys
 from openai import AzureOpenAI
+
+def files_reader(files):
+    result = ""
+
+    for path in files:
+        if os.path.exists( path ):
+          with open(path, 'r', encoding='UTF-8') as f:
+            result += f.read()
+            f.close()
+
+    return result
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Code review specified file with OpenAI LLM')
@@ -24,20 +36,17 @@ if __name__=="__main__":
     parser.add_argument('-d', '--deployment', action='store', default=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"), help='specify deployment name or set it in AZURE_OPENAI_DEPLOYMENT_NAME env')
     args = parser.parse_args()
 
+    codes = ""
+    if len(args.args)>0:
+        codes = files_reader(args.args)
+    else:
+        codes = sys.stdin.read()
+
     client = AzureOpenAI(
       api_key = args.apikey,  
       api_version = "2024-02-01",
       azure_endpoint = args.endpoint
     )
-
-    codes = ""
-
-    for path in args.args:
-        if os.path.exists( path ):
-          with open(path, 'r', encoding='UTF-8') as f:
-            codes += f.read()
-            f.close()
-
     response = client.chat.completions.create(
         model= args.deployment, #"gpt-35-turbo-instruct", # model = "deployment_name".
         messages=[
