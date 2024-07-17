@@ -1,3 +1,4 @@
+.DS_Store
 infer-out/
 *.gem
 *.rbc
